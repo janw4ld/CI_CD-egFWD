@@ -1,0 +1,32 @@
+
+---
+- name: "install python3."
+  become: true
+  apt:
+    name: ["pyhton3"]
+    state: latest
+    update_cache: true
+
+- name: "upgrade packages"
+  become: true
+  apt:
+    upgrade: true
+
+- name: remove dependencies that are no longer required
+  become: true
+  apt:
+    autoremove: true
+
+- name: "install dependencies."
+  become: true
+  apt:
+    name: ["nodejs", "npm"]
+    state: latest
+
+- name: "install pm2"
+  become: true
+  npm:
+    name: pm2
+    global: true
+    production: true
+    state: present
