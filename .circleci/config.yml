@@ -25,9 +25,9 @@ jobs:
           keys: [frontend-build]
       - run:
           name: Build front-end
+          working_directory: ./frontend
           command: |
             #!/bin/bash
-            cd frontend
             npm install
             npm run build
       - save_cache:
@@ -43,9 +43,9 @@ jobs:
           keys: [backend-build]
       - run:
           name: Back-end build
+          working_directory: ./backend
           command: |
             #!/bin/bash
-            cd backend
             npm install
             npm run build
       - save_cache:
@@ -61,9 +61,9 @@ jobs:
           keys: [frontend-build]
       - run:
           name: Front-end test
+          working_directory: ./frontend
           command: |
             #!/bin/bash
-            cd frontend
             npm install
             npm run test
 
@@ -76,9 +76,9 @@ jobs:
           keys: [backend-build]
       - run:
           name: Back-end test
+          working_directory: ./backend
           command: |
             #!/bin/bash
-            cd backend
             npm install
             npm run test
 
@@ -91,9 +91,9 @@ jobs:
           keys: [frontend-build]
       - run:
           name: Frontend-end audit
+          working_directory: ./frontend
           command: |
             #!/bin/bash
-            cd frontend
             npm install
             npm audit fix --audit-level=critical --force
             npm audit fix --force
@@ -108,9 +108,9 @@ jobs:
           keys: [backend-build]
       - run:
           name: Backend-end audit
+          working_directory: ./backend
           command: |
             #!/bin/bash
-            cd backend
             npm install
             npm audit fix --audit-level=critical --force
             npm audit fix --force
@@ -171,8 +171,8 @@ jobs:
             pip3 install ansible
       - run:
           name: Configure server
+          working_directory: ./.circleci/ansible
           command: |
-            cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment:
           stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
@@ -194,8 +194,8 @@ jobs:
             pip3 install awscli
       - run:
           name: Run migrations
+          working_directory: ./backend
           command: |
-            cd backend
             npm install
             npm run migrations > migrations_dump.txt
       - run:
@@ -239,8 +239,8 @@ jobs:
             cat frontend/.env
       - run:
           name: Deploy frontend objects
+          working_directory: ./frontend
           command: |
-            cd frontend
             npm install
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
@@ -257,38 +257,38 @@ jobs:
               --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
               --output text
                     
-  deploy-backend:
-    docker:
-      - image: cimg/node:13.8.0
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints: ["ea:55:1c:9c:5c:df:79:68:04:c9:cc:db:a8:50:d5:36:8b:23:dd:75"]
-      - attach_workspace:
-          at: .
-      - run:
-          name: Install ansible and awscli
-          command: |
-            sudo apt -y update && sudo apt install -yy python3 python3-pip
-            pip3 install --upgrade pip
-            pip3 install awscli
-            pip3 install ansible
-      - run:
-          name: Deploy backend
-          command: |
-            cd backend
-            npm install
-            npm run build
-            cd ..
-            tar -C backend -czvf artifact.tar.gz .
-            cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is"
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
-      - destroy-environment:
-          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-      - destroy-environment:
-          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+  # deploy-backend:
+  #   docker:
+  #     - image: cimg/node:13.8.0
+  #   steps:
+  #     - checkout
+  #     - add_ssh_keys:
+  #         fingerprints: ["ea:55:1c:9c:5c:df:79:68:04:c9:cc:db:a8:50:d5:36:8b:23:dd:75"]
+  #     - attach_workspace:
+  #         at: .
+  #     - run:
+  #         name: Install ansible and awscli
+  #         command: |
+  #           sudo apt -y update && sudo apt install -yy python3 python3-pip
+  #           pip3 install --upgrade pip
+  #           pip3 install awscli
+  #           pip3 install ansible
+  #     - run:
+  #         name: build backend
+  #         working_directory: ./backend
+  #         command: |
+  #           npm install
+  #           npm run build
+  #           cd ..
+  #           tar -C backend -czvf artifact.tar.gz .
+  #           cd .circleci/ansible
+  #           echo "Contents  of the inventory.txt file is"
+  #           cat inventory.txt
+  #           ansible-playbook -i inventory.txt deploy-backend.yml
+  #     - destroy-environment:
+  #         stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+  #     - destroy-environment:
+  #         stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 
 workflows:
