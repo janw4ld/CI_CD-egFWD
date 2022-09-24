@@ -155,7 +155,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: cimg/python:3.10.7
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - add_ssh_keys:
@@ -165,8 +165,10 @@ jobs:
       - run:
           name: Install ansible and awscli
           command: |
-            pip install awscli
-            pip install ansible
+            test -e /usr/bin/python3 \
+            || (apt -y update && apt install -y python3 python3-pip)
+            pip3 install awscli
+            pip3 install ansible
       - run:
           name: Configure server
           command: |
@@ -179,7 +181,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/python:3.10.7-node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -187,7 +189,9 @@ jobs:
       - run:
           name: Install awscli for rollback
           command: |
-            pip install awscli
+            test -e /usr/bin/python3 \
+            || (apt -y update && apt install -y python3 python3-pip)
+            pip3 install awscli
       - run:
           name: Run migrations
           command: |
@@ -210,15 +214,16 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: cimg/python:3.10.7-node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - run:
           name: Install ansible and awscli
           command: |
-            # image already contains node and npm
-            pip install ansible
-            pip install awscli
+            test -e /usr/bin/python3 \
+            || (apt -y update && apt install -y python3 python3-pip)
+            pip3 install awscli
+            pip3 install ansible
       - attach_workspace:
           at: ~/
       - run:
@@ -254,7 +259,7 @@ jobs:
                     
   deploy-backend:
     docker:
-      - image: cimg/python:3.10.7-node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - add_ssh_keys:
@@ -262,10 +267,12 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Install ansible
+          name: Install ansible and awscli
           command: |
-            # image already contains node and npm
-            pip install ansible
+            test -e /usr/bin/python3 \
+            || (apt -y update && apt install -y python3 python3-pip)
+            pip3 install awscli
+            pip3 install ansible
       - run:
           name: Deploy backend
           command: |
