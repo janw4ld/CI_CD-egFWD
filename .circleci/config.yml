@@ -29,7 +29,6 @@ jobs:
           name: Build front-end
           working_directory: ./frontend
           command: |
-            #!/bin/bash
             npm install
             npm run build
       - save_cache:
@@ -47,7 +46,6 @@ jobs:
           name: Back-end build
           working_directory: ./backend
           command: |
-            #!/bin/bash
             npm install
             npm run build
       - save_cache:
@@ -65,7 +63,6 @@ jobs:
           name: Front-end test
           working_directory: ./frontend
           command: |
-            #!/bin/bash
             npm install
             npm run test
 
@@ -80,7 +77,6 @@ jobs:
           name: Back-end test
           working_directory: ./backend
           command: |
-            #!/bin/bash
             npm install
             npm run test
 
@@ -95,7 +91,6 @@ jobs:
           name: Frontend-end audit
           working_directory: ./frontend
           command: |
-            #!/bin/bash
             npm install
             npm audit fix --audit-level=critical --force
             npm audit fix --force
@@ -112,7 +107,6 @@ jobs:
           name: Backend-end audit
           working_directory: ./backend
           command: |
-            #!/bin/bash
             npm install
             npm audit fix --audit-level=critical --force
             npm audit fix --force
@@ -190,18 +184,20 @@ jobs:
       - image: cimg/node:13.8.0
     steps:
       - checkout
-      - restore_cache:
-          keys: [backend-build]
+      # - restore_cache:
+      #     keys: [backend-build]
       # - run:
       #     name: Downgrade npm and install backend
       #     working_directory: ./backend
       #     command: |
-      #       # sudo npm install -g npm@latest-2
-      #       npm install
+      #       sudo npm install -g npm@latest-2
+      #       # npm install
       - run:
           name: Run migrations
           working_directory: ./backend
           command: |
+            npm install
+            npm run build
             npm run migrations | tee migrations_dump.txt || \
             cat /home/circleci/.npm/_logs/*.log && exit 3
             ls -a
