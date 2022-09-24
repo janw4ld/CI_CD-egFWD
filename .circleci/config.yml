@@ -179,19 +179,20 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/node:13.8.0
+      - image: cimg/python:3.10.7-node
     steps:
       - checkout
       - restore_cache:
           keys: [backend-build]
       - run:
+          name: Install awscli for rollback
+          command: |
+            pip install awscli
+      - run:
           name: Run migrations
           command: |
             cd backend
             npm install
-            # deploys server at an unstable state
-            npm audit fix --audit-level=critical --force
-            npm audit fix --force
             npm run migrations > migrations_dump.txt
       - run:
           name: Send migration results to kvdb
@@ -236,9 +237,6 @@ jobs:
           command: |
             cd frontend
             npm install
-            # deploys server at an unstable state
-            npm audit fix --audit-level=critical --force
-            npm audit fix --force
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
@@ -273,9 +271,6 @@ jobs:
           command: |
             cd backend
             npm install
-            # deploys server at an unstable state
-            npm audit fix --audit-level=critical --force
-            npm audit fix --force
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
