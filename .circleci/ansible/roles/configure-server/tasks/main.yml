@@ -23,7 +23,7 @@
     name: ["nodejs", "npm"]
     state: latest
 
-- name: "downgrade npm to v2?"
+- name: "downgrade npm to v2"
   become: true
   raw: npm install -g npm@latest-2
 
