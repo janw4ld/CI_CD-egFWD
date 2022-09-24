@@ -165,11 +165,10 @@ jobs:
       - run:
           name: Install ansible and awscli
           command: |
-            command -v pip >/dev/null 2>&1 \
-            || (sudo apt -y update && sudo apt install -y python3)
+            sudo apt -y update && sudo apt install -yy python3
             python3 -m ensurepip --upgrade
-            pip install awscli
-            pip install ansible
+            pip3 install awscli
+            pip3 install ansible
       - run:
           name: Configure server
           command: |
@@ -190,10 +189,9 @@ jobs:
       - run:
           name: Install awscli for rollback
           command: |
-            command -v pip >/dev/null 2>&1 \
-            || (sudo apt -y update && sudo apt install -y python3)
+            sudo apt -y update && sudo apt install -yy python3
             python3 -m ensurepip --upgrade
-            pip install awscli
+            pip3 install awscli
       - run:
           name: Run migrations
           command: |
@@ -222,11 +220,10 @@ jobs:
       - run:
           name: Install ansible and awscli
           command: |
-            command -v pip >/dev/null 2>&1 \
-            || (sudo apt -y update && sudo apt install -y python3)
+            sudo apt -y update && sudo apt install -yy python3
             python3 -m ensurepip --upgrade
-            pip install awscli
-            pip install ansible
+            pip3 install awscli
+            pip3 install ansible
       - attach_workspace:
           at: ~/
       - run:
@@ -272,11 +269,10 @@ jobs:
       - run:
           name: Install ansible and awscli
           command: |
-            command -v pip >/dev/null 2>&1 \
-            || (sudo apt -y update && sudo apt install -y python3)
+            sudo apt -y update && sudo apt install -yy python3
             python3 -m ensurepip --upgrade
-            pip install awscli
-            pip install ansible
+            pip3 install awscli
+            pip3 install ansible
       - run:
           name: Deploy backend
           command: |
