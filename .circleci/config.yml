@@ -193,13 +193,17 @@ jobs:
             pip3 install --upgrade pip
             pip3 install awscli
       - run:
+          name: Downgrade npm and install backend
+          working_directory: ./backend
+          command: |
+            sudo npm install -g npm@latest-2
+            npm install
+      - run:
           name: Run migrations
           working_directory: ./backend
           command: |
-            npm install -g npm@latest-2
-            npm install
             npm run migrations | tee migrations_dump.txt || \
-            cat /home/circleci/.npm/_logs/*.log && exit 1
+            cat /home/circleci/.npm/_logs/*.log && exit 3
             ls -a
       - run:
           name: Send migration results to kvdb
