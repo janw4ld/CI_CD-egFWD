@@ -200,7 +200,7 @@ jobs:
             npm install
             # npm run build
             npm run migrations | tee migrations_dump.txt || \
-            cat /home/circleci/.npm/_logs/*.log && exit 3
+            (cat /home/circleci/.npm/_logs/*.log && exit 3)
             ls -a
       - run:
           name: Send migration results to kvdb
