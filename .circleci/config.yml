@@ -214,10 +214,10 @@ jobs:
             migration_${CIRCLE_WORKFLOW_ID:0:7}\
             ?access_token=${KVDB_ACCESS_TOKEN}\
             -d '1'
-      # - destroy-environment:
-      #     stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-      # - destroy-environment:
-      #     stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  
 
   deploy-frontend:
     docker:
