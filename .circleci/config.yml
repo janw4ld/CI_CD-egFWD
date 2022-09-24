@@ -145,7 +145,7 @@ jobs:
               --filters "Name=tag:project,Values=udapeople" \
               --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
-          root: ~/
+          root: .
           paths:
             - .circleci/ansible/inventory.txt
       - destroy-environment:
@@ -161,7 +161,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["ea:55:1c:9c:5c:df:79:68:04:c9:cc:db:a8:50:d5:36:8b:23:dd:75"]
       - attach_workspace:
-          at: ~/
+          at: .
       - run:
           name: Install ansible and awscli
           command: |
@@ -225,7 +225,7 @@ jobs:
             pip3 install awscli
             pip3 install ansible
       - attach_workspace:
-          at: ~/
+          at: .
       - run:
           name: Get backend url
           command: |
@@ -265,7 +265,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["ea:55:1c:9c:5c:df:79:68:04:c9:cc:db:a8:50:d5:36:8b:23:dd:75"]
       - attach_workspace:
-          at: ~/
+          at: .
       - run:
           name: Install ansible and awscli
           command: |
