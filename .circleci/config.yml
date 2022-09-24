@@ -118,15 +118,11 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/aws
     steps:
       - checkout
       - run:
-          name: install circleci dependencies
-          command: |
-            yum install -y tar gzip
-      - run:
-          name: Ensure front-end infrastructure exist
+          name: Ensure front-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
@@ -145,9 +141,9 @@ jobs:
           name: Add back-end ip to Ansible inventory
           command: |
             aws ec2 describe-instances \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:project,Values=udapeople" \
-            --output text >> .circleci/ansible/inventory.txt
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:project,Values=udapeople" \
+              --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
@@ -167,7 +163,7 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Install ansible
+          name: Install ansible and awscli
           command: |
             pipenv install awscli
             pipenv install ansible
@@ -200,13 +196,97 @@ jobs:
       - run:
           name: Send migration results to kvdb
           command: |
-            [[ grep -q "has been executed successfully" \
-            backend/migrations_dump.txt ]] \
-            && [[ curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN} -d '1' ]]
+            grep -q "has been executed successfully" \
+            backend/migrations_dump.txt && \
+            curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/\
+            migration_${CIRCLE_WORKFLOW_ID:0:7}\
+            ?access_token=${KVDB_ACCESS_TOKEN}\
+            -d '1'
       - destroy-environment:
           stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
       - destroy-environment:
           stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  
+
+  deploy-frontend:
+    docker:
+      - image: cimg/python:3.10-node
+    steps:
+      - checkout
+      - run:
+          name: Install ansible and awscli
+          command: |
+            # image already contains node and npm
+            pipenv install ansible
+            pipenv install awscli
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+                --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                --filters "Name=tag:project,Values=udapeople" \
+                --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            npm install
+            # deploys server at an unstable state
+            npm audit fix --audit-level=critical --force
+            npm audit fix --force
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: Get S3 url from frontend.yml operation
+          command: |
+            aws cloudformation --region us-east-1 describe-stacks \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
+              --output text
+                    
+  deploy-backend:
+    docker:
+      - image: cimg/python:3.10-node
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["ea:55:1c:9c:5c:df:79:68:04:c9:cc:db:a8:50:d5:36:8b:23:dd:75"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install ansible
+          command: |
+            # image already contains node and npm
+            pipenv install ansible
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm install
+            # deploys server at an unstable state
+            npm audit fix --audit-level=critical --force
+            npm audit fix --force
+            npm run build
+            cd ..
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 
 workflows:
@@ -221,3 +301,4 @@ workflows:
       - deploy-infrastructure
       - configure-infrastructure
       - run-migrations
+      - deploy-frontend
