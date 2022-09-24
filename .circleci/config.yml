@@ -197,7 +197,8 @@ jobs:
           working_directory: ./backend
           command: |
             npm install
-            npm run migrations | tee migrations_dump.txt
+            npm run migrations | tee migrations_dump.txt || \
+            cat /home/circleci/.npm/_logs/*.log && exit 1
             ls -a
       - run:
           name: Send migration results to kvdb
