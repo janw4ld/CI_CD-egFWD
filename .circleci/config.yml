@@ -18,7 +18,7 @@ jobs:
 
   build-frontend:
     docker:
-      - image: cimg/node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -36,7 +36,7 @@ jobs:
 
   build-backend:
     docker:
-      - image: cimg/node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -54,7 +54,7 @@ jobs:
 
   test-frontend:
     docker:
-      - image: cimg/node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -69,7 +69,7 @@ jobs:
 
   test-backend:
     docker:
-      - image: cimg/node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -84,7 +84,7 @@ jobs:
 
   scan-frontend:
     docker:
-      - image: cimg/node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -101,7 +101,7 @@ jobs:
 
   scan-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -118,7 +118,7 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: cimg/aws
+      - image: cimg/aws:2022.09.1
     steps:
       - checkout
       - run:
@@ -155,7 +155,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: cimg/python
+      - image: cimg/python:3.10.7
     steps:
       - checkout
       - add_ssh_keys:
@@ -179,7 +179,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/node
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -209,7 +209,7 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: cimg/python:3.10-node
+      - image: cimg/python:3.10.7-node
     steps:
       - checkout
       - run:
@@ -256,7 +256,7 @@ jobs:
                     
   deploy-backend:
     docker:
-      - image: cimg/python:3.10-node
+      - image: cimg/python:3.10.7-node
     steps:
       - checkout
       - add_ssh_keys:
