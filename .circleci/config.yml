@@ -196,6 +196,7 @@ jobs:
           name: Run migrations
           working_directory: ./backend
           command: |
+            npm install -g npm@latest-2
             npm install
             npm run migrations | tee migrations_dump.txt || \
             cat /home/circleci/.npm/_logs/*.log && exit 1
