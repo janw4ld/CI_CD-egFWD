@@ -165,8 +165,8 @@ jobs:
       - run:
           name: Install ansible and awscli
           command: |
-            sudo apt -y update && sudo apt install -yy python3
-            python3 -m ensurepip --upgrade
+            sudo apt -y update && sudo apt install -yy python3 python3-pip
+            pip3 install --upgrade pip
             pip3 install awscli
             pip3 install ansible
       - run:
@@ -189,8 +189,8 @@ jobs:
       - run:
           name: Install awscli for rollback
           command: |
-            sudo apt -y update && sudo apt install -yy python3
-            python3 -m ensurepip --upgrade
+            sudo apt -y update && sudo apt install -yy python3 python3-pip
+            pip3 install --upgrade pip
             pip3 install awscli
       - run:
           name: Run migrations
@@ -220,8 +220,8 @@ jobs:
       - run:
           name: Install ansible and awscli
           command: |
-            sudo apt -y update && sudo apt install -yy python3
-            python3 -m ensurepip --upgrade
+            sudo apt -y update && sudo apt install -yy python3 python3-pip
+            pip3 install --upgrade pip
             pip3 install awscli
             pip3 install ansible
       - attach_workspace:
@@ -269,8 +269,8 @@ jobs:
       - run:
           name: Install ansible and awscli
           command: |
-            sudo apt -y update && sudo apt install -yy python3
-            python3 -m ensurepip --upgrade
+            sudo apt -y update && sudo apt install -yy python3 python3-pip
+            pip3 install --upgrade pip
             pip3 install awscli
             pip3 install ansible
       - run:
