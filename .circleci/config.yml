@@ -388,7 +388,7 @@ workflows:
       - run-migrations:
           requires:
             - configure-infrastructure
-            - build-frontend
+            - build-backend
       - deploy-frontend:
           requires:
             - run-migrations
