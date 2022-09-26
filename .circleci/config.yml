@@ -32,9 +32,6 @@ commands:
 
   revert-migrations:
     description: Revert database migration.
-    parameters:
-      when:
-        type: string
     steps:
       - restore_cache:
           keys: [backend-build]
@@ -176,13 +173,17 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - .circleci/ansible/inventory.txt
-      - destroy-environment:
-          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
-      - destroy-environment:
-          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
+            - .circleci/ansible/inventory.
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
   configure-infrastructure:
     docker:
@@ -202,15 +203,21 @@ jobs:
           working_directory: ./.circleci/ansible
           command: |
             ansible-playbook -i inventory.txt configure-server.yml
-      - pip3-install:
-          pkglist: awscli
-          when: on_fail
-      - destroy-environment:
-          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
-      - destroy-environment:
-          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
+      - when:
+          condition: on_fail
+          steps:
+            - pip3-install:
+                pkglist: awscli
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
   run-migrations:
     docker:
@@ -242,19 +249,29 @@ jobs:
             migrations_dump.txt && \
             curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN} -d '1' \
             || true  # avoid rollback if migrations work but curl fails
-      - setup-pip3:
-          when: on_fail
-      - pip3-install:
-          pkglist: awscli
-          when: on_fail
-      - revert-migrations:
-          when: on_fail
-      - destroy-environment:
-          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
-      - destroy-environment:
-          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
+      - when:
+          condition: on_fail
+          steps:
+            - setup-pip3
+      - when:
+          condition: on_fail
+          steps:
+            - pip3-install:
+                pkglist: awscli
+      - when:
+          condition: on_fail
+          steps:
+            - revert-migrations
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-frontend:
     docker:
@@ -287,14 +304,20 @@ jobs:
           command: |
             npm run build
             aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - revert-migrations:
-          when: on_fail
-      - destroy-environment:
-          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
-      - destroy-environment:
-          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
+      - when:
+          condition: on_fail
+          steps:
+            - revert-migrations
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - when:
+          condition: on_fail
+          steps:
+            - destroy-environment:
+                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Get S3 url from frontend.yml operation
           command: |
