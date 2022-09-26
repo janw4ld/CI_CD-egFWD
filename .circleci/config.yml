@@ -430,4 +430,13 @@ workflows:
             - run-migrations
 
 # temporary step to remove resources on success until config file is complete      
-      - destroy-everything
+      - destroy-everything:
+          requires:
+            - test-backend
+            - test-frontend
+            - scan-backend
+            - scan-frontend
+            - deploy-infrastructure
+            - configure-infrastructure
+            - run-migrations
+            - deploy-frontend
