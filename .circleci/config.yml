@@ -7,10 +7,11 @@ commands:
     parameters:
       when:
         type: string
-        default: always
+        default: on_success
     steps:
       - run:
           name: Upgrade python3 and installl the latest pip
+          when: <<parameters.when>>
           command: |
             sudo apt -y update && sudo apt install -yy python3 python3-pip
             pip3 install --upgrade pip
@@ -20,12 +21,13 @@ commands:
     parameters:
       when:
         type: string
-        default: always
+        default: on_success
       pkglist:
         type: string
     steps:
       - run:
-          name: Install a package or more through pip3.
+          name: Install [ <<parameters.pkglist>> ] through pip3.
+          when: <<parameters.when>>
           command: |
             pip3 install <<parameters.pkglist>>
 
@@ -39,7 +41,8 @@ commands:
         type: string
     steps:
       - run:
-          name: Destroy environments
+          name: Destroy environment <<parameters.stack>>
+          when: <<parameters.when>>
           command: |
             aws cloudformation delete-stack --stack-name "<<parameters.stack>>"
 
@@ -54,6 +57,7 @@ commands:
           keys: [backend-build]
       - run:
           name: Revert migrations
+          when: <<parameters.when>>
           working_directory: ./backend
           command: |
             npm run migrations:revert
