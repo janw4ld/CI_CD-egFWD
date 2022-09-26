@@ -3,11 +3,18 @@
   copy:
     src: ../../artifact.tar.gz
     dest: ~/artifact.tar.gz
-    owner: { { user } }
-    mode: "0644"
+
+# - name: "upgrade tar and install gzip."
+#   become: true
+#   apt:
+#     pkg:
+#       - gzip
+#       - tar
+#     state: latest
+#     update_cache: true
 
 - name: "Extract build atrifacts"
-  raw: (mkdir ~/backend && tar –xvzf ~/artifact.tar.gz -C ~/backend)
+  raw: (mkdir ~/backend && tar -zxvf ~/artifact.tar.gz -C ~/backend)
   args:
     executable: /bin/bash
 

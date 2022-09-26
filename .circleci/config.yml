@@ -59,7 +59,7 @@ commands:
           when: <<parameters.when>>
           working_directory: ./backend
           command: |
-            SUCCESS=$(curl https://kvdb.io/9GE4jRtKznmVKRfvdBABBe/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
+            SUCCESS=$(curl --insecure https://kvdb.io/9GE4jRtKznmVKRfvdBABBe/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
             [[ $SUCCESS == 1 ]] \
             && npm install \
             && npm run migrations:revert
@@ -313,8 +313,11 @@ jobs:
                 --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
-            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            echo API_URL="http://${BACKEND_IP}:3030" > frontend/.env
             cat frontend/.env
+      - save_cache:
+          paths: [frontend/.env]
+          key: api-url
       - run:
           name: Deploy frontend objects
           working_directory: ./frontend
@@ -353,7 +356,7 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - restore_cache:
-          keys: [backend-artifacts]
+          keys: [backend-artifacts] 
       - setup-pip3
       - pip3-install:
           pkglist: "awscli ansible"
@@ -365,11 +368,47 @@ jobs:
             tar -C backend -czvf artifact.tar.gz .
       - run:
           name: Deploy backend
-          working_directory: .circleci/ansible
+          working_directory: ./.circleci/ansible
           command: |
             echo "Contents  of the inventory.txt file are -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
+      - revert-migrations:
+          when: on_fail
+      - empty-s3bucket:
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+
+  smoke-test:
+    docker:
+      - image: cimg/node:13.8.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [api-url]
+      - run:
+          name: Get backend url and run backend smoke-test
+          working_directory: ./frontend
+          command: |
+            source .env
+            (curl "${API_URL}/api/status" | grep "ok" \
+            && return 0) || return 1
+      - run:
+          name: Frontend smoke test
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"
+            (curl -s ${URL} | grep "Welcome" \
+            && return 1) || return 1
+      - setup-pip3:
+          when: on_fail
+      - pip3-install:
+          pkglist: awscli
+          when: on_fail
       - revert-migrations:
           when: on_fail
       - empty-s3bucket:
@@ -430,8 +469,11 @@ workflows:
       - deploy-backend:
           requires:
             - run-migrations
-# temporary step to remove resources on success until config file is complete      
-      - destroy-everything:
+      - smoke-test:
           requires:
             - deploy-frontend
             - deploy-backend
+# temporary step to remove resources on success until config file is complete      
+      - destroy-everything:
+          requires:
+            - smoke-test
