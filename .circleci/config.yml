@@ -1,17 +1,26 @@
 version: 2.1
 
 commands:
+
   setup-pip3:
     description: Install the latest pip3 on debian-based image.
+    parameters:
+      when:
+        type: string
+        default: always
     steps:
       - run:
           name: Upgrade python3 and installl the latest pip
           command: |
             sudo apt -y update && sudo apt install -yy python3 python3-pip
             pip3 install --upgrade pip
+
   pip3-install:
     description: Install a package or more through pip3.
     parameters:
+      when:
+        type: string
+        default: always
       pkglist:
         type: string
     steps:
@@ -19,9 +28,13 @@ commands:
           name: Install a package or more through pip3.
           command: |
             pip3 install <<parameters.pkglist>>
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
+      when:
+        type: string
+        default: on_fail
       stack:
         type: string
     steps:
@@ -32,6 +45,10 @@ commands:
 
   revert-migrations:
     description: Revert database migration.
+    parameters:
+      when:
+        type: string
+        default: on_fail
     steps:
       - restore_cache:
           keys: [backend-build]
@@ -40,6 +57,7 @@ commands:
           working_directory: ./backend
           command: |
             npm run migrations:revert
+
 
 jobs:
   build-frontend:
@@ -174,16 +192,12 @@ jobs:
           root: .
           paths:
             - .circleci/ansible/inventory.txt
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
   configure-infrastructure:
     docker:
@@ -203,21 +217,15 @@ jobs:
           working_directory: ./.circleci/ansible
           command: |
             ansible-playbook -i inventory.txt configure-server.yml
-      - when:
-          condition: on_fail
-          steps:
-            - pip3-install:
-                pkglist: awscli
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - pip3-install:
+          pkglist: awscli
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
   run-migrations:
     docker:
@@ -249,29 +257,19 @@ jobs:
             migrations_dump.txt && \
             curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN} -d '1' \
             || true  # avoid rollback if migrations work but curl fails
-      - when:
-          condition: on_fail
-          steps:
-            - setup-pip3
-      - when:
-          condition: on_fail
-          steps:
-            - pip3-install:
-                pkglist: awscli
-      - when:
-          condition: on_fail
-          steps:
-            - revert-migrations
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - setup-pip3:
+          when: on_fail
+      - pip3-install:
+          pkglist: awscli
+          when: on_fail
+      - revert-migrations:
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
   deploy-frontend:
     docker:
@@ -304,20 +302,14 @@ jobs:
           command: |
             npm run build
             aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - when:
-          condition: on_fail
-          steps:
-            - revert-migrations
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-      - when:
-          condition: on_fail
-          steps:
-            - destroy-environment:
-                stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - destroy-environment:
+          stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
       - run:
           name: Get S3 url from frontend.yml operation
           command: |
@@ -362,33 +354,33 @@ jobs:
   #         stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 workflows:
-  default:
-    jobs:
-      - build-frontend
-      - build-backend
-      - test-backend:
-          requires:
-            - build-backend
-      - test-frontend:
-          requires:
-            - build-frontend
-      - scan-backend:
-          requires:
-            - build-backend
-      - scan-frontend:
-          requires:
-            - build-frontend
-      - deploy-infrastructure:
-          requires:
-            - build-backend
-            - build-frontend
-      - configure-infrastructure:
-          requires:
-            - deploy-infrastructure
-      - run-migrations:
-          requires:
-            - configure-infrastructure
-            - build-backend
-      - deploy-frontend:
-          requires:
-            - run-migrations
+    default:
+      jobs:
+        - build-frontend
+        - build-backend
+        - test-backend:
+            requires:
+              - build-backend
+        - test-frontend:
+            requires:
+              - build-frontend
+        - scan-backend:
+            requires:
+              - build-backend
+        - scan-frontend:
+            requires:
+              - build-frontend
+        - deploy-infrastructure:
+            requires:
+              - build-backend
+              - build-frontend
+        - configure-infrastructure:
+            requires:
+              - deploy-infrastructure
+        - run-migrations:
+            requires:
+              - configure-infrastructure
+              - build-backend
+        - deploy-frontend:
+            requires:
+              - run-migrations
