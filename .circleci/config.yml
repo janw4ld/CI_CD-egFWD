@@ -429,8 +429,11 @@ workflows:
       - deploy-frontend:
           requires:
             - run-migrations
-
+      - deploy-backend:
+          requires:
+            - run-migrations
 # temporary step to remove resources on success until config file is complete      
       - destroy-everything:
           requires:
+            - deploy-frontend
             - deploy-backend
