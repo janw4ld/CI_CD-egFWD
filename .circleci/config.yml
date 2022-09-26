@@ -1,17 +1,32 @@
 version: 2.1
 
 commands:
+  setup-pip3:
+    description: Install the latest pip3 on debian-based image.
+    steps:
+      - run:
+          name: Upgrade python3 and installl the latest pip
+          command: |
+            sudo apt -y update && sudo apt install -yy python3 python3-pip
+            pip3 install --upgrade pip
+  pip3-install:
+    description: Install a package or more through pip3.
+    parameters:
+      pkglist:
+        type: string
+    steps:
+      - run:
+          name: Install a package or more through pip3.
+          command: |
+            pip3 install <<parameters.pkglist>>
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
       stack:
         type: string
-      when:
-        type: string
     steps:
       - run:
           name: Destroy environments
-          when: <<parameters.when>>
           command: |
             aws cloudformation delete-stack --stack-name "<<parameters.stack>>"
 
@@ -21,9 +36,10 @@ commands:
       when:
         type: string
     steps:
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Revert migrations
-          when: <<parameters.when>>
           working_directory: ./backend
           command: |
             npm run migrations:revert
@@ -45,6 +61,9 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - save_cache:
+          paths: [frontend/dist]
+          key: frontend-artifacts
 
   build-backend:
     docker:
@@ -62,6 +81,9 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - save_cache:
+          paths: [backend/dist]
+          key: backend-artifacts
 
   test-frontend:
     docker:
@@ -172,22 +194,17 @@ jobs:
             - "d2:2a:4a:4f:17:9c:a5:87:b8:9e:7a:d6:12:b1:5d:ce"
       - attach_workspace:
           at: .
-      - run:
-          name: Install ansible
-          command: |
-            sudo apt -y update && sudo apt install -yy python3 python3-pip
-            pip3 install --upgrade pip
-            pip3 install ansible
+      - setup-pip3
+      - pip3-install:
+          pkglist: ansible
       - run:
           name: Configure server
           working_directory: ./.circleci/ansible
           command: |
             ansible-playbook -i inventory.txt configure-server.yml
-      - run:
-          name: Install awscli for rollback
+      - pip3-install:
+          pkglist: awscli
           when: on_fail
-          command: |
-            pip3 install awscli
       - destroy-environment:
           stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
@@ -225,13 +242,11 @@ jobs:
             migrations_dump.txt && \
             curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN} -d '1' \
             || true  # avoid rollback if migrations work but curl fails
-      - run:
-          name: Install awscli and dependencies for rollback
+      - setup-pip3:
           when: on_fail
-          command: |
-            sudo apt -y update && sudo apt install -yy python3 python3-pip
-            pip3 install --upgrade pip
-            pip3 install awscli
+      - pip3-install:
+          pkglist: awscli
+          when: on_fail
       - revert-migrations:
           when: on_fail
       - destroy-environment:
@@ -246,15 +261,15 @@ jobs:
       - image: cimg/node:13.8.0
     steps:
       - checkout
-      - run:
-          name: Install ansible and awscli
-          command: |
-            sudo apt -y update && sudo apt install -yy python3 python3-pip
-            pip3 install --upgrade pip
-            pip3 install awscli
-            pip3 install ansible
       - attach_workspace:
           at: .
+      - restore_cache:
+          keys: [frontend-build]
+      - restore_cache:
+          keys: [frontend-artifacts]
+      - setup-pip3
+      - pip3-install:
+          pkglist: "awscli ansible"
       - run:
           name: Get backend url
           command: |
@@ -270,10 +285,8 @@ jobs:
           name: Deploy frontend objects
           working_directory: ./frontend
           command: |
-            npm install
             npm run build
-            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - revert-migrations:
           when: on_fail
       - destroy-environment:
