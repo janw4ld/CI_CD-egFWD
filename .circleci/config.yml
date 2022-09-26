@@ -59,7 +59,7 @@ commands:
           when: <<parameters.when>>
           working_directory: ./backend
           command: |
-            SUCCESS=$(curl https://kvdb.io/9GE4jRtKznmVKRfvdBABBe/migration_migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
+            SUCCESS=$(curl https://kvdb.io/9GE4jRtKznmVKRfvdBABBe/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
             [[ $SUCCESS == 1 ]] \
             && npm install \
             && npm run migrations:revert
@@ -365,12 +365,11 @@ jobs:
             tar -C backend -czvf artifact.tar.gz .
       - run:
           name: Deploy backend
-          working_directory: .
+          working_directory: .circleci/ansible
           command: |
             echo "Contents  of the inventory.txt file are -------"
-            cat .circleci/ansible/inventory.txt
-            ansible-playbook -i .circleci/ansible/inventory.txt \
-            .circleci/ansible/deploy-backend.yml
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - revert-migrations:
           when: on_fail
       - empty-s3bucket:
@@ -425,7 +424,6 @@ workflows:
       - run-migrations:
           requires:
             - configure-infrastructure
-            - build-backend
       - deploy-frontend:
           requires:
             - run-migrations

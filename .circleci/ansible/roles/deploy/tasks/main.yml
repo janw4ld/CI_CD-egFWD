@@ -1,13 +1,13 @@
 ---
 - name: "send build atrifacts to remote"
   copy:
-    src: ./artifact.tar.gz
+    src: ../../artifact.tar.gz
     dest: ~/artifact.tar.gz
-    owner: ubuntu
-    mode: '0644'
+    owner: { { user } }
+    mode: "0644"
 
 - name: "Extract build atrifacts"
-  raw: mkdir ~/backend && tar –xvzf ~/artifact.tar.gz -C ~/backend
+  raw: (mkdir ~/backend && tar –xvzf ~/artifact.tar.gz -C ~/backend)
   args:
     executable: /bin/bash
 
@@ -17,6 +17,6 @@
     production: true
 
 - name: "start the app"
-  raw: (cd ~/backend && pm2 stop default && pm2 start npm -- start)
+  raw: (cd ~/backend && pm2 stop default; pm2 start npm -- start)
   args:
     executable: /bin/bash
