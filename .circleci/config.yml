@@ -333,7 +333,7 @@ jobs:
       - run:
           name: Get S3 url resulting from frontend deployment
           command: |
-            aws cloudformation --region us-east-1 describe-stacks \
+            aws cloudformation --region ${AWS_DEFAULT_REGION} describe-stacks \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
               --output text \
