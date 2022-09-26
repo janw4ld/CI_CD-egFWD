@@ -15,9 +15,20 @@ commands:
           command: |
             aws cloudformation delete-stack --stack-name "<<parameters.stack>>"
 
+  revert-migrations:
+    description: Revert database migration.
+    parameters:
+      when:
+        type: string
+    steps:
+      - run:
+          name: Revert migrations
+          when: <<parameters.when>>
+          working_directory: ./backend
+          command: |
+            npm run migrations:revert
 
 jobs:
-
   build-frontend:
     docker:
       - image: cimg/node:13.8.0
@@ -104,11 +115,11 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Backend-end audit
+          name: Back-end audit
           working_directory: ./backend
           command: |
             npm install
-            npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force  
             npm audit fix --force
             npm audit --audit-level=critical
 
@@ -118,7 +129,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Ensure front-end infrastructure exists  
+          name: Ensure front-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
@@ -157,8 +168,8 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: 
-           - "d2:2a:4a:4f:17:9c:a5:87:b8:9e:7a:d6:12:b1:5d:ce"
+          fingerprints:
+            - "d2:2a:4a:4f:17:9c:a5:87:b8:9e:7a:d6:12:b1:5d:ce"
       - attach_workspace:
           at: .
       - run:
@@ -208,13 +219,12 @@ jobs:
             ls -a
       - run:
           name: Send migration results to kvdb
+          working_directory: ./backend
           command: |
             grep -q "has been executed successfully" \
-            backend/migrations_dump.txt && \
-            curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/\
-            migration_${CIRCLE_WORKFLOW_ID:0:7}\
-            ?access_token=${KVDB_ACCESS_TOKEN}\
-            -d '1'
+            migrations_dump.txt && \
+            curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN} -d '1' \
+            || true  # avoid rollback if migrations work but curl fails
       - run:
           name: Install awscli and dependencies for rollback
           when: on_fail
@@ -222,12 +232,14 @@ jobs:
             sudo apt -y update && sudo apt install -yy python3 python3-pip
             pip3 install --upgrade pip
             pip3 install awscli
+      - revert-migrations:
+          when: on_fail
       - destroy-environment:
           stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
       - destroy-environment:
           stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail  
+          when: on_fail
 
   deploy-frontend:
     docker:
@@ -262,6 +274,8 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - revert-migrations:
+          when: on_fail
       - destroy-environment:
           stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
@@ -275,14 +289,15 @@ jobs:
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
               --output text
-                    
+            || true # avoid rollback if deployment succeeds but stack query fails
+
   # deploy-backend:
   #   docker:
   #     - image: cimg/node:13.8.0
   #   steps:
   #     - checkout
   #     - add_ssh_keys:
-  #         fingerprints: 
+  #         fingerprints:
   #          - "ea:55:1c:9c:5c:df:79:68:04:c9:cc:db:a8:50:d5:36:8b:23:dd:75"
   #     - attach_workspace:
   #         at: .
@@ -310,7 +325,6 @@ jobs:
   #     - destroy-environment:
   #         stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
-
 workflows:
   default:
     jobs:
@@ -321,7 +335,7 @@ workflows:
             - build-backend
       - test-frontend:
           requires:
-            -  build-frontend
+            - build-frontend
       - scan-backend:
           requires:
             - build-backend
