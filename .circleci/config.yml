@@ -62,6 +62,30 @@ commands:
           command: |
             npm run migrations:revert
 
+  empty-s3bucket:
+    description: Empty an S3 bucket to allow for its deletion.
+    parameters:
+      when:
+        type: string
+        default: on_fail
+      name:
+        type: string
+        default: udapeople-${CIRCLE_WORKFLOW_ID:0:7}
+    steps:
+      - run:
+          name: Empty <<parameters.name>> bucket.
+          when: <<parameters.when>>
+          command: |
+            aws s3api delete-objects \
+              --bucket <<parameters.name>> \
+              --delete "$(aws s3api list-object-versions \
+              --bucket <<parameters.name>> \
+              --output=json \
+              --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')"
+
+      
+
+
 
 jobs:
   build-frontend:
@@ -190,7 +214,7 @@ jobs:
           command: |
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: .
@@ -294,7 +318,7 @@ jobs:
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --filters "Name=tag:project,Values=udapeople" \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
@@ -306,7 +330,17 @@ jobs:
           command: |
             npm run build
             aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - run:
+          name: Get S3 url resulting from frontend deployment
+          command: |
+            aws cloudformation --region us-east-1 describe-stacks \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
+              --output text \
+            || true # avoid rollback if deployment succeeds but stack query fails
       - revert-migrations:
+          when: on_fail
+      - empty-s3bucket:
           when: on_fail
       - destroy-environment:
           stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
@@ -314,48 +348,6 @@ jobs:
       - destroy-environment:
           stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
-      - run:
-          name: Get S3 url from frontend.yml operation
-          command: |
-            aws cloudformation --region us-east-1 describe-stacks \
-              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
-              --output text
-            || true # avoid rollback if deployment succeeds but stack query fails
-
-  # deploy-backend:
-  #   docker:
-  #     - image: cimg/node:13.8.0
-  #   steps:
-  #     - checkout
-  #     - add_ssh_keys:
-  #         fingerprints:
-  #          - "ea:55:1c:9c:5c:df:79:68:04:c9:cc:db:a8:50:d5:36:8b:23:dd:75"
-  #     - attach_workspace:
-  #         at: .
-  #     - run:
-  #         name: Install ansible and awscli
-  #         command: |
-  #           sudo apt -y update && sudo apt install -yy python3 python3-pip
-  #           pip3 install --upgrade pip
-  #           pip3 install awscli
-  #           pip3 install ansible
-  #     - run:
-  #         name: build backend
-  #         working_directory: ./backend
-  #         command: |
-  #           npm install
-  #           npm run build
-  #           cd ..
-  #           tar -C backend -czvf artifact.tar.gz .
-  #           cd .circleci/ansible
-  #           echo "Contents  of the inventory.txt file is"
-  #           cat inventory.txt
-  #           ansible-playbook -i inventory.txt deploy-backend.yml
-  #     - destroy-environment:
-  #         stack: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-  #     - destroy-environment:
-  #         stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 workflows:
     default:
