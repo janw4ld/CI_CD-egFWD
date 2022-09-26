@@ -1,7 +1,22 @@
 ---
-- name: "install backend"
+- name: "send build atrifacts to remote"
+  copy:
+    src: ./artifact.tar.gz
+    dest: ~/artifact.tar.gz
+    owner: ubuntu
+    mode: '0644'
+
+- name: "Extract build atrifacts"
+  raw: mkdir ~/backend && tar –xvzf ~/artifact.tar.gz -C ~/backend
+  args:
+    executable: /bin/bash
+
+- name: "install backend artifacts"
   npm:
-    path: ./artifacts
-    global: true
+    path: ~/backend
     production: true
-    state: present
+
+- name: "start the app"
+  raw: (cd ~/backend && pm2 stop default && pm2 start npm -- start)
+  args:
+    executable: /bin/bash
