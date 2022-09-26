@@ -173,7 +173,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - .circleci/ansible/inventory.
+            - .circleci/ansible/inventory.txt
       - when:
           condition: on_fail
           steps:
@@ -378,13 +378,17 @@ workflows:
       - scan-frontend:
           requires:
             - build-frontend
-      - deploy-infrastructure
+      - deploy-infrastructure:
+          requires:
+            - build-backend
+            - build-frontend
       - configure-infrastructure:
           requires:
             - deploy-infrastructure
       - run-migrations:
           requires:
             - configure-infrastructure
+            - build-frontend
       - deploy-frontend:
           requires:
             - run-migrations
