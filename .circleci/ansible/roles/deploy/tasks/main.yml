@@ -1,0 +1,7 @@
+---
+- name: "install backend"
+  npm:
+    path: ./artifacts
+    global: true
+    production: true
+    state: present
