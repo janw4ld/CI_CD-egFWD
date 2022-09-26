@@ -315,9 +315,10 @@ jobs:
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" > frontend/.env
             cat frontend/.env
-      - save_cache:
-          paths: [frontend/.env]
-          key: api-url
+      - persist_to_workspace:
+          root: .
+          paths:
+            - frontend/.env
       - run:
           name: Deploy frontend objects
           working_directory: ./frontend
@@ -389,13 +390,14 @@ jobs:
       - image: cimg/node:13.8.0
     steps:
       - checkout
-      - restore_cache:
-          keys: [api-url]
+      - attach_workspace:
+          at: .
       - run:
           name: Get backend url and run backend smoke-test
           working_directory: ./frontend
           command: |
             source .env
+            echo ${API_URL}
             (curl "${API_URL}/api/status" | grep "ok" \
             && return 0) || return 1
       - run:
