@@ -95,8 +95,6 @@ jobs:
           name: Build front-end
           working_directory: ./frontend
           command: |
-            npm cache clean --force
-            [ -d node_modules ] && rm -R node_modules
             npm install
             npm run build
       - save_cache:
@@ -117,8 +115,6 @@ jobs:
           name: Back-end build
           working_directory: ./backend
           command: |
-            npm cache clean --force
-            [ -d node_modules ] && rm -R node_modules
             npm install
             npm run build
       - save_cache:
