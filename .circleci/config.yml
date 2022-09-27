@@ -188,7 +188,7 @@ jobs:
             npm audit fix --force
             npm audit --audit-level=critical
 
-  deploy-infrastructure:
+  deploy-frontend-infrastructure:
     docker:
       - image: cimg/aws:2022.09.1
     steps:
@@ -201,6 +201,15 @@ jobs:
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
+      - destroy-environments:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+
+  deploy-backend-infrastructure:
+    docker:
+      - image: cimg/aws:2022.09.1
+    steps:
+      - checkout
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -467,13 +476,18 @@ workflows:
       - scan-frontend:
           requires:
             - build-frontend
-      - deploy-infrastructure:
+      - deploy-backend-infrastructure:
+          requires:
+            - build-backend
+            - build-frontend
+      - deploy-frontend-infrastructure:
           requires:
             - build-backend
             - build-frontend
       - configure-infrastructure:
           requires:
-            - deploy-infrastructure
+            - deploy-backend-infrastructure
+            - deploy-frontend-infrastructure
       - run-migrations:
           requires:
             - configure-infrastructure
