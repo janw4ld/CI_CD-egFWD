@@ -59,7 +59,7 @@ commands:
           when: <<parameters.when>>
           working_directory: ./backend
           command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/9GE4jRtKznmVKRfvdBABBe/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
+            SUCCESS=$(curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
             [[ $SUCCESS == 1 ]] \
             && npm install \
             && npm run migrations:revert
