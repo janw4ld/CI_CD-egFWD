@@ -31,7 +31,7 @@ commands:
             pip3 install <<parameters.pkglist>>
 
   destroy-environments:
-    description: Destroy backend and frontend cloudformation stacks for <<parameters.id>>.
+    description: Destroy backend and frontend cloudformation stacks for a given id.
     parameters:
       when:
         type: string
@@ -40,7 +40,7 @@ commands:
         type: string
     steps:
       - run:
-          name: Destroy environments for <<parameters.id>>
+          name: Destroy environments
           when: <<parameters.when>>
           command: |
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.id>> \
@@ -78,7 +78,7 @@ commands:
         default: udapeople-${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
-          name: Empty <<parameters.bucket-name>> bucket.
+          name: Empty s3 bucket.
           when: <<parameters.when>>
           command: |
             aws s3 rm "s3://<<parameters.bucket-name>>" --recursive
