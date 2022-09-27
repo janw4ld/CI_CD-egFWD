@@ -1,4 +1,4 @@
 URL01:https://github.com/janw4ld/CI_CD-egFWD
-URL02:http://udapeople-d7e4554.s3-website-us-east-1.amazonaws.com
-URL03:http://d3drvx6izj3wu1.cloudfront.net
-URL04:http://54.84.100.166:3030/api/status
+URL02:http://udapeople-a25da79.s3-website-us-east-1.amazonaws.com
+URL03:http://d3ibvx0yfd6z8u.cloudfront.net
+URL04:http://54.91.122.201:3030/api/status
