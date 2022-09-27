@@ -62,7 +62,7 @@ commands:
           working_directory: ./backend
           command: |
             SUCCESS=$(curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
-            [[ $SUCCESS == 1 ]] \
+            [[ $SUCCESS == 1 ]] || true \
             && (npm install;
                 npm run migrations:revert) \
             
@@ -478,12 +478,16 @@ workflows:
             - build-frontend
       - deploy-backend-infrastructure:
           requires:
-            - build-backend
-            - build-frontend
+            - scan-backend
+            - scan-frontend
+            - test-backend
+            - test-frontend
       - deploy-frontend-infrastructure:
           requires:
-            - build-backend
-            - build-frontend
+            - scan-backend
+            - scan-frontend
+            - test-backend
+            - test-frontend
       - configure-infrastructure:
           requires:
             - deploy-backend-infrastructure
