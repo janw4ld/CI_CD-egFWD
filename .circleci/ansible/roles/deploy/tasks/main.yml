@@ -1,8 +1,6 @@
 ---
 - name: "create project dir"
-  raw: mkdir ~/backend
-  args:
-    executable: /bin/bash
+  shell: mkdir ~/backend
 
 - name: "send build atrifacts to remote"
   unarchive:
@@ -16,6 +14,4 @@
     global: true
 
 - name: "start the app"
-  raw: (cd ~/backend && pm2 stop all; pm2 start npm -- run start)
-  args:
-    executable: /bin/bash
+  shell: cd ~/backend && pm2 stop all; pm2 start npm -- run start

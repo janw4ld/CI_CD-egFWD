@@ -54,8 +54,6 @@ commands:
         type: string
         default: on_fail
     steps:
-      - restore_cache:
-          keys: [backend-build]
       - run:
           name: Revert migrations
           when: <<parameters.when>>
@@ -63,7 +61,9 @@ commands:
           command: |
             SUCCESS=$(curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
             [[ $SUCCESS == 1 ]] \
-            && (npm install;
+            && (npm cache clean --force;
+                [ -d node_modules ] && rm -R node_modules;
+                npm install;
                 npm run build;
                 npm run migrations:revert) \
             
