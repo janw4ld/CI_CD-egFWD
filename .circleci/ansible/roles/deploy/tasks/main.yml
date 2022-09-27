@@ -1,29 +1,21 @@
 ---
-- name: "send build atrifacts to remote"
-  copy:
-    src: ../../artifact.tar.gz
-    dest: ~/artifact.tar.gz
-
-# - name: "upgrade tar and install gzip."
-#   become: true
-#   apt:
-#     pkg:
-#       - gzip
-#       - tar
-#     state: latest
-#     update_cache: true
-
-- name: "Extract build atrifacts"
-  raw: (mkdir ~/backend && tar -zxvf ~/artifact.tar.gz -C ~/backend)
+- name: "create project dir"
+  raw: mkdir ~/backend
   args:
     executable: /bin/bash
+
+- name: "send build atrifacts to remote"
+  unarchive:
+    src: ../../artifact.tar.gz
+    dest: ~/backend
 
 - name: "install backend artifacts"
   npm:
     path: ~/backend
     production: true
+    global: true
 
 - name: "start the app"
-  raw: (cd ~/backend && pm2 stop default; pm2 start npm -- start)
+  raw: (cd ~/backend && pm2 stop all; pm2 start npm -- run start)
   args:
     executable: /bin/bash

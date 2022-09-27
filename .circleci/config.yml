@@ -63,9 +63,10 @@ commands:
           command: |
             SUCCESS=$(curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
             [[ $SUCCESS == 1 ]] \
-            && npm install || true
-            npm run build  || true
-            npm run migrations:revert
+            && (npm install;
+                npm run build;
+                npm run migrations:revert) \
+            
 
   empty-s3bucket:
     description: Empty an S3 bucket to allow for its deletion.
