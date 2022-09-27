@@ -54,6 +54,8 @@ commands:
         type: string
         default: on_fail
     steps:
+      - restore_cache:
+          keys: [backend-modules]
       - run:
           name: Revert migrations
           when: <<parameters.when>>
@@ -61,10 +63,7 @@ commands:
           command: |
             SUCCESS=$(curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
             [[ $SUCCESS == 1 ]] \
-            && (npm cache clean --force;
-                [ -d node_modules ] && rm -R node_modules;
-                npm install;
-                npm run build;
+            && (npm install;
                 npm run migrations:revert) \
             
 
@@ -91,16 +90,18 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build]
+          keys: [frontend-modules]
       - run:
           name: Build front-end
           working_directory: ./frontend
           command: |
+            npm cache clean --force
+            [ -d node_modules ] && rm -R node_modules
             npm install
             npm run build
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-build
+          key: frontend-modules
       - save_cache:
           paths: [frontend/dist]
           key: frontend-artifacts
@@ -111,19 +112,21 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-modules]
       - run:
           name: Back-end build
           working_directory: ./backend
           command: |
+            npm cache clean --force
+            [ -d node_modules ] && rm -R node_modules
             npm install
             npm run build
       - save_cache:
           paths: [backend/node_modules]
-          key: backend-build
+          key: backend-modules
       - save_cache:
           paths: [backend/dist]
-          key: backend-artifacts
+          key: backend-artifact
 
   test-frontend:
     docker:
@@ -131,7 +134,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build]
+          keys: [frontend-modules]
       - run:
           name: Front-end test
           working_directory: ./frontend
@@ -145,7 +148,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-modules]
       - run:
           name: Back-end test
           working_directory: ./backend
@@ -159,7 +162,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build]
+          keys: [frontend-modules]
       - run:
           name: Frontend-end audit
           working_directory: ./frontend
@@ -175,7 +178,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-modules]
       - run:
           name: Back-end audit
           working_directory: ./backend
@@ -252,7 +255,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-modules]
       - run:
           name: Run migrations
           working_directory: ./backend
@@ -286,7 +289,7 @@ jobs:
       - attach_workspace:
           at: .
       - restore_cache:
-          keys: [frontend-build]
+          keys: [frontend-modules]
       - restore_cache:
           keys: [frontend-artifacts]
       - setup-pip3
@@ -339,9 +342,9 @@ jobs:
       - attach_workspace:
           at: .
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-modules]
       - restore_cache:
-          keys: [backend-artifacts] 
+          keys: [backend-artifact]
       - setup-pip3
       - pip3-install:
           pkglist: "awscli ansible"
