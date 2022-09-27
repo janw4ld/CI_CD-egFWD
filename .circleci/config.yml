@@ -419,10 +419,10 @@ jobs:
       - run:
           name: Update cloudfront distribution
           command: |
-            aws cloudformation deploy                                                 \
-              --template-file .circleci/files/cloudfront.yml                          \
-              --stack-name InitialStack                                               \
-              --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}"  \
+            aws cloudformation deploy                                       \
+              --template-file .circleci/files/cloudfront.yml                \
+              --stack-name InitialStack                                     \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
       - empty-s3bucket:
           when: on_fail
@@ -453,10 +453,10 @@ jobs:
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
             echo Stack names: "${STACKS[@]}"
 
-            if [[ "udapeople-${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]]
+            if [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]]
             then
                 aws s3 rm "s3://${OldWorkflowID}" --recursive
-                aws cloudformation delete-stack --stack-name "${STACKS[0]}" \
+                aws cloudformation delete-stack --stack-name "${STACKS[0]}"   \
                 & aws cloudformation delete-stack --stack-name "${STACKS[1]}"
             else
                 echo "nothing to cleanup!"
