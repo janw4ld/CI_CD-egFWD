@@ -476,18 +476,28 @@ workflows:
       - scan-frontend:
           requires:
             - build-frontend
+# dont deploy anything if either backend or frontend builds are
+# broken or vulnerable, since deployment is a slow costly job
       - deploy-backend-infrastructure:
           requires:
             - scan-backend
             - scan-frontend
             - test-backend
             - test-frontend
+          filters:
+            branches:
+              only:
+                - master
       - deploy-frontend-infrastructure:
           requires:
             - scan-backend
             - scan-frontend
             - test-backend
             - test-frontend
+          filters:
+            branches:
+              only:
+                - master
       - configure-infrastructure:
           requires:
             - deploy-backend-infrastructure
