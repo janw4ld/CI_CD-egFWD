@@ -378,7 +378,7 @@ jobs:
           command: |
             source .env
             echo ${API_URL}
-            (curl "${API_URL}/api/status" | grep "ok" \
+            (curl ${API_URL}/api/status | grep "ok" \
             && exit 0) || (exit 1)
       - run:
           name: Frontend smoke test
