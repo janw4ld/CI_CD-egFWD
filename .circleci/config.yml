@@ -64,6 +64,7 @@ commands:
             SUCCESS=$(curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN})
             [[ $SUCCESS == 1 ]] \
             && npm install \
+            && npm run build \
             && npm run migrations:revert
 
   empty-s3bucket:
@@ -80,12 +81,7 @@ commands:
           name: Empty <<parameters.bucket-name>> bucket.
           when: <<parameters.when>>
           command: |
-            aws s3api delete-objects \
-              --bucket <<parameters.bucket-name>> \
-              --delete "$(aws s3api list-object-versions \
-              --bucket <<parameters.bucket-name>> \
-              --output=json \
-              --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')"
+            aws s3 rm "s3://<<parameters.bucket-name>>" --recursive
 
 jobs:
   build-frontend:
@@ -275,10 +271,10 @@ jobs:
       - pip3-install:
           pkglist: awscli
           when: on_fail
-      - revert-migrations:
-          when: on_fail
       - destroy-environments:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - revert-migrations:
           when: on_fail
 
   deploy-frontend:
@@ -323,12 +319,12 @@ jobs:
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
               --output text
-      - revert-migrations:
-          when: on_fail
       - empty-s3bucket:
           when: on_fail
       - destroy-environments:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - revert-migrations:
           when: on_fail
 
   deploy-backend:
@@ -361,12 +357,12 @@ jobs:
             echo "Contents  of the inventory.txt file are -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      - revert-migrations:
-          when: on_fail
       - empty-s3bucket:
           when: on_fail
       - destroy-environments:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - revert-migrations:
           when: on_fail
 
   smoke-test:
@@ -383,38 +379,72 @@ jobs:
             source .env
             echo ${API_URL}
             (curl "${API_URL}/api/status" | grep "ok" \
-            && return 0) || return 1
+            && exit 0) || (exit 1)
       - run:
           name: Frontend smoke test
           command: |
             URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"
             (curl -s ${URL} | grep "Welcome" \
-            && return 1) || return 1
+            && exit 0) || (exit 1)
       - setup-pip3:
           when: on_fail
       - pip3-install:
           pkglist: awscli
           when: on_fail
-      - revert-migrations:
-          when: on_fail
       - empty-s3bucket:
           when: on_fail
       - destroy-environments:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
+      - revert-migrations:
+          when: on_fail
 
-  destroy-everything:
+  cloudfront-update:
+    docker:
+      - image: cimg/node:13.8.0
+    steps: 
+      - checkout
+      - setup-pip3
+      - pip3-install:
+          pkglist: awscli
+      - run:
+          name: Update cloudfront distribution
+          command: |    
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --stack-name InitialStack \
+              --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople
+      - empty-s3bucket:
+          when: on_fail
+      - destroy-environments:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - revert-migrations:
+          when: on_fail
+
+  cleanup:
     docker:
       - image: cimg/node:13.8.0
     steps:
       - checkout
-      - revert-migrations:
-          when: always
-      - empty-s3bucket:
-          when: always
-      - destroy-environments:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-          when: always
+      - run:
+          command: |
+            export OldWorkflowID=$(aws cloudformation list-exports \
+                --query "Exports[?Name==\`WorkflowID\`].Value" \
+                --no-paginate --output text)
+            echo OldWorkflowID: "${OldWorkflowID}"
+            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+            export STACKS=($(aws cloudformation list-stacks \
+                --query "StackSummaries[*].StackName" \
+                --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+            echo Stack names: "${STACKS[@]}"
+            [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]] \
+            && aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive \
+            && (aws cloudformation delete-stack \
+                  --stack-name udapeople-frontend-${OldWorkflowID} \
+                & aws cloudformation delete-stack \
+                  --stack-name udapeople-backend-${OldWorkflowID})
 
 workflows:
   default:
@@ -453,7 +483,9 @@ workflows:
           requires:
             - deploy-frontend
             - deploy-backend
-# temporary step to remove resources on success until config file is complete      
-      - destroy-everything:
+      - cloudfront-update:
           requires:
             - smoke-test
+      - cleanup:
+          requires:
+            - cloudfront-update
