@@ -267,15 +267,6 @@ jobs:
             npm install
             npm run migrations | tee migrations_dump.txt || \
             (cat /home/circleci/.npm/_logs/*.log && exit 3)
-            ls -a
-      - run:
-          name: Send migration results to kvdb
-          working_directory: ./backend
-          command: |
-            grep -q "has been executed successfully" \
-            migrations_dump.txt && \
-            curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN} -d '1' \
-            || true  # avoid rollback if migrations work but curl fails
       - setup-pip3:
           when: on_fail
       - pip3-install:
@@ -289,7 +280,15 @@ jobs:
       - destroy-environment:
           stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
-
+# avoid rollback if migrations work but curl fails
+      - run:
+          name: Send migration results to kvdb
+          working_directory: ./backend
+          command: |
+            grep -q "has been executed successfully" \
+            migrations_dump.txt && \
+            curl https://kvdb.io/73BxsktDqNfPCXWvm3FfVm/migration_${CIRCLE_WORKFLOW_ID:0:7}?access_token=${KVDB_ACCESS_TOKEN} -d '1'
+            
   deploy-frontend:
     docker:
       - image: cimg/node:13.8.0
@@ -325,14 +324,6 @@ jobs:
           command: |
             npm run build
             aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - run:
-          name: Get S3 url resulting from frontend deployment
-          command: |
-            aws cloudformation --region ${AWS_DEFAULT_REGION} describe-stacks \
-              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
-              --output text \
-            || true # avoid rollback if deployment succeeds but stack query fails
       - revert-migrations:
           when: on_fail
       - empty-s3bucket:
@@ -343,6 +334,13 @@ jobs:
       - destroy-environment:
           stack: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
+      - run:
+          name: Get S3 url resulting from frontend deployment
+          command: |
+            aws cloudformation --region ${AWS_DEFAULT_REGION} describe-stacks \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
+              --output text
 
   deploy-backend:
     docker:
