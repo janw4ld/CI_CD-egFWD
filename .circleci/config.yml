@@ -165,6 +165,7 @@ jobs:
           working_directory: ./frontend
           command: |
             npm install
+            npm audit fix --audit-level=critical --force
             npm audit fix --force
             npm audit --audit-level=critical
 
@@ -179,10 +180,10 @@ jobs:
           name: Back-end audit
           working_directory: ./backend
           command: |
-            npm install || true
-            # npm audit fix --log-level=critical --audit-level=critical --force
+            npm install
+            npm audit fix --audit-level=critical --force
             npm audit fix --force
-            npm audit --log-level=critical --audit-level=critical
+            npm audit --audit-level=critical
 
   deploy-infrastructure:
     docker:
