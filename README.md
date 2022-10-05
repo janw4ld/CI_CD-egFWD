@@ -12,43 +12,35 @@ In this project, you will prove your mastery of the following learning objective
 - Utilize a configuration management tool to accomplish deployment to cloud-based servers.
 - Surface critical server errors for diagnosis using centralized structured logging.
 
-![Diagram of CI/CD Pipeline we will be building.](udapeople.png)
-
-### Instructions
-
-* [Selling CI/CD](instructions/0-selling-cicd.md)
-* [Getting Started](instructions/1-getting-started.md)
-* [Deploying Working, Trustworthy Software](instructions/2-deploying-trustworthy-code.md)
-* [Configuration Management](instructions/3-configuration-management.md)
-* [Turn Errors into Sirens](instructions/4-turn-errors-into-sirens.md)
-
+![Diagram of CI/CD Pipeline we will be building.](pipeline.png)
+___
 ### Project Submission
 
 For your submission, please submit the following:
 
 - A text file named `urls.txt` including:
-  1. Public Url to GitHub repository (not private) [URL01]
-  1. Public URL for your S3 Bucket (aka, your green candidate front-end) [URL02]
-  1. Public URL for your CloudFront distribution (aka, your blue production front-end) [URL03]
-  1. Public URLs to deployed application back-end in EC2 [URL04]
-  1. Public URL to your Prometheus Server [URL05]
-- Your screenshots in JPG or PNG format, named using the screenshot number listed in the instructions. These screenshots should be included in your code repository in the root folder.
-  1. Job failed because of compile errors. [SCREENSHOT01]
-  1. Job failed because of unit tests. [SCREENSHOT02]
-  1. Job that failed because of vulnerable packages. [SCREENSHOT03]
-  1. An alert from one of your failed builds. [SCREENSHOT04]
-  1. Appropriate job failure for infrastructure creation. [SCREENSHOT05]
-  1. Appropriate job failure for the smoke test job. [SCREENSHOT06]
-  1. Successful rollback after a failed smoke test. [SCREENSHOT07]  
-  1. Successful promotion job. [SCREENSHOT08]
-  1. Successful cleanup job. [SCREENSHOT09]
-  1. Only deploy on pushed to `master` branch. [SCREENSHOT10]
-  1. Provide a screenshot of a graph of your EC2 instance including available memory, available disk space, and CPU usage. [SCREENSHOT11]
-  1. Provide a screenshot of an alert that was sent by Prometheus. [SCREENSHOT12]
+  1. Public Url to GitHub repository (not private) [URL01](https://github.com/janw4ld/CI_CD-egFWD)
+  1. Public URL for your S3 Bucket (aka, your green candidate front-end) [URL02](http://udapeople-a25da79.s3-website-us-east-1.amazonaws.com)
+  1. Public URL for your CloudFront distribution (aka, your blue production front-end) [URL03](http://d3ibvx0yfd6z8u.cloudfront.net)
+  1. Public URLs to deployed application back-end in EC2 [URL04](http://54.91.122.201:3030/api/status)
+  1. Public URL to your Prometheus Server [URL05](http://ec2-44-202-141-5.compute-1.amazonaws.com:9090/targets)
+</br><sup>The links are broken now, because the infrastructure was destroyed after completing the project.</sup>
 
-- Your presentation should be in PDF format named "presentation.pdf" and should be included in your code repository root folder. 
+- Your screenshots in JPG or PNG format, named using the screenshot number listed in the instructions.
+  1. Job failed because of compile errors. [SCREENSHOT01](udacity/submission/SCREENSHOT01.png)
+  2. Job failed because of unit tests. [SCREENSHOT02](udacity/submission/SCREENSHOT02.png)
+  3. Job that failed because of vulnerable packages. [SCREENSHOT03](udacity/submission/SCREENSHOT03.png)
+  4. An alert from one of your failed builds. [SCREENSHOT04](udacity/submission/SCREENSHOT04.png)
+  5. Appropriate job failure for infrastructure creation. [SCREENSHOT05](udacity/submission/SCREENSHOT05.png)
+  6. Appropriate job failure for the smoke test job. [SCREENSHOT06](udacity/submission/SCREENSHOT06.png)
+  7. Successful rollback after a failed smoke test. [SCREENSHOT07](udacity/submission/SCREENSHOT07.png)  
+  8. Successful promotion job. [SCREENSHOT08](udacity/submission/SCREENSHOT08.png)
+  9. Successful cleanup job. [SCREENSHOT09](udacity/submission/SCREENSHOT09.png)
+  10. Only deploy on pushed to `master` branch. [SCREENSHOT10](udacity/submission/SCREENSHOT10.png)
+  11. Provide a screenshot of a graph of your EC2 instance including available memory, available disk space, and CPU usage. </br><sup>Note that 3 screenshots are required i.e. [node free memory](udacity/submission/SCREENSHOT11_memory.png), [node CPU usage](udacity/submission/SCREENSHOT11_cpu.png), and [node disk usage](udacity/submission/SCREENSHOT11_disk.png).</sup>
+  12. Provide a screenshot of an alert that was sent by Prometheus. [SCREENSHOT12](udacity/submission/SCREENSHOT12.png)
 
-Before you submit your project, please check your work against the project rubric. If you haven’t satisfied each criterion in the rubric, then revise your work so that you have met all the requirements. 
+- Your presentation should be in PDF format and named [presentation.pdf](udacity/submission/presentation.pdf).
 
 ### Built With
 
